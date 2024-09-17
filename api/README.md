@@ -67,3 +67,7 @@ IV. Regras para o pedido de credito ser aceite:
 		
 V. Script store procedure
 	Está na pasta "api/_db"
+	
+VI: IDE, Framework
+	Foi utilizado o Visual Studio 2022 e a framework .NET 8.0
+	
