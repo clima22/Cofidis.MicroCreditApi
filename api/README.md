@@ -65,3 +65,5 @@ IV. Regras para o pedido de credito ser aceite:
 		O Valor máximo do índice de risco permitido para aprovação do crédito está definido no ficheiro de settings da webapi com a chave "CreditApplication":
 			"MaxRiskIndexAllowed": 0.28 // Valor máximo do índice de risco permitido para aprovação do crédito
 		
+V. Script store procedure
+	Está na pasta "api/_db"
