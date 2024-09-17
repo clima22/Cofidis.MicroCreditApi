@@ -1,0 +1,1 @@
+No ficheiro xunit-tests/Helper.cs existe a constante CreditApplicationBaseAddress para definir o endereço base do serviço CreditApplication.

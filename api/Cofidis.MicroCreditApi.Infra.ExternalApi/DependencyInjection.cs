@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Cofidis.MicroCreditApi.Infra.ExternalApi
 {
-    public static class ServiceExtensions
+    public static class DependencyInjection
     {
         public static void ConfigureExternalApis(this IServiceCollection services)
         {

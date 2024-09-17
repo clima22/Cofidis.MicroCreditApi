@@ -11,24 +11,20 @@ namespace Cofidis.MicroCreditApi.Core.Application.CreditApplication
     public class CreditApplicationService : ICreditApplicationService
     {
         private readonly ILogger<CreditApplicationService> _logger;
-        private readonly ICreditLimitService _creditLimitService;
+      
         private readonly IEconomicIndicatorService _economicIndicatorService;
-        private readonly ICustomerInfoService _customerInfoService;
-        private readonly ICentralCreditRegisterService _centralCreditRegisterService;
         private readonly CreditApplicationSetting _creditApplicationSetting;
+        private readonly CreditApplicationCreateValidator _validatorCreate;
         public CreditApplicationService(IConfiguration configuration,
             ILogger<CreditApplicationService> logger,
-            ICreditLimitService creditLimitService,
             IEconomicIndicatorService economicIndicatorService,
-            ICustomerInfoService customerInfoService,
-            ICentralCreditRegisterService centralCreditRegisterService
+            CreditApplicationCreateValidator validatorCreate
         )
         {
             _logger = logger;
-            _creditLimitService = creditLimitService;
+           
             _economicIndicatorService = economicIndicatorService;
-            _customerInfoService = customerInfoService;
-            _centralCreditRegisterService = centralCreditRegisterService;
+            _validatorCreate = validatorCreate;
 
             var setting = configuration.GetSection("CreditApplication").Get<CreditApplicationSetting>();
             if (setting == null)
@@ -42,21 +38,11 @@ namespace Cofidis.MicroCreditApi.Core.Application.CreditApplication
 
         public CreditApplicationCreateResponseDto Create(CreditApplicationCreateDto request)
         {
-            //Validação dados fornecidos: FluentValidation.AbstractValidator é um componente muito utilizado para fazer validação de campos de uma forma mais elegante e clean, mas não será utilizado neste exercicio.
-            
-            //obter informação do cliente atraves do CMD (chave móvel digital)
-            if (!_customerInfoService.GetCustomerInfo(request.NIF, out var customerInfoDto))
-                return new CreditApplicationCreateResponseDto() { Result = false, ResultMessage = "Não foi possivel obter dados sobre o NIF fornecido" };
+            var valResult = _validatorCreate.Validate(request);
+            if (!valResult.IsValid) return new CreditApplicationCreateResponseDto() { Result = false, ResultMessage = _validatorCreate.BuildMsgError(valResult) };
 
-            if (!_creditLimitService.ValidateCreditAmountLimit(request.Amount, request.NetMonthlyIncome))
-                return new CreditApplicationCreateResponseDto() { Result = false, ResultMessage = "Montante de crédito fora dos limites permitidos" };
-
-            if (!_creditLimitService.ValidateDurationCredit(customerInfoDto.BirthDate, request.DurationMonths))
-                return new CreditApplicationCreateResponseDto() { Result = false, ResultMessage = "Duração de crédito fora dos limites permitidos" };
-           
-            //Utilizar o serviço de Banco de Portugal para obter o mapa de responsabilidade de credito do cliente
-            if (!_centralCreditRegisterService.GetMap(request.NIF, out var mapCRC))
-                return new CreditApplicationCreateResponseDto() { Result = false, ResultMessage = "Neste momento não é possivel processar o seu pedido" };
+            //var customerInfo = _validatorCreate.CustomerInfo;
+            var mapCRC = _validatorCreate.MapCRC;
 
             /*Regra 1: Se o cliente tiver algum credito com valor vencido o crédito não é aceite*/
             if (mapCRC.CreditRegisterList.Where(e => e.OverdueAmount > 0).Any())
@@ -71,6 +57,9 @@ namespace Cofidis.MicroCreditApi.Core.Application.CreditApplication
             decimal effortRate = CalculateEffortRate(monthlyPaymentOtherCredits + monthlyPayment, request.NetMonthlyIncome);
 
             var indexRisk = CalculateRiskIndex(effortRate);
+
+            _logger.LogDebug($"NIF: {request.NIF} | MonthlyPaymentOtherCredits: {monthlyPaymentOtherCredits} | MonthlyPayment: {monthlyPayment} | EffortRate: {effortRate} | RiskIndex: {indexRisk}");
+
             if (indexRisk > _creditApplicationSetting.MaxRiskIndexAllowed)
                 return new CreditApplicationCreateResponseDto() { Result = false, ResultMessage = "Não estão reunidas as condições necessárias para atribuição do crédito solicitado" };
 
