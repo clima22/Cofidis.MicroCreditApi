@@ -100,7 +100,7 @@ namespace Cofidis.MicroCreditApi.Core.Application.CreditApplication
         private decimal CalculateMonthlyPayment(decimal creditAmount, int numberOfPayments)
         {
             /*Calcular a prestação mensal para o credito:
-            Vai-se utilizar a formula básica conhecida como Sistema Francês de Amortização (PMT)
+            Foi utilizado a formula básica conhecida como Sistema Francês de Amortização (PMT)
             A taxa de juro a aplicar é anual.
             Formula: P = (C * i) / (1 - i)^-n  em que:
                 P: prestação mensal
