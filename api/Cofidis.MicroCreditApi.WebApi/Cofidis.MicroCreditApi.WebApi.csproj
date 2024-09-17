@@ -19,6 +19,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Cofidis.MicroCreditApi.Core.Application\Cofidis.MicroCreditApi.Core.Application.csproj" />
     <ProjectReference Include="..\Cofidis.MicroCreditApi.Infra.ExternalApi\Cofidis.MicroCreditApi.Infra.ExternalApi.csproj" />
+    <ProjectReference Include="..\Cofidis.MicroCreditApi.Infra.Repository\Cofidis.MicroCreditApi.Infra.Repository.csproj" />
   </ItemGroup>
 
 </Project>

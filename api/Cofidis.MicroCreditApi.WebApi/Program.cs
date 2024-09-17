@@ -1,6 +1,7 @@
 using Cofidis.MicroCreditApi.WebApi;
 using Cofidis.MicroCreditApi.Core.Application;
 using Cofidis.MicroCreditApi.Infra.ExternalApi;
+using Cofidis.MicroCreditApi.Infra.Repository;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,11 +15,14 @@ builder.Services.AddSwaggerGen();
 //log
 var logger = builder.Services.ConfigureLogs(builder.Configuration, builder.Logging);
 
-//Core - Application
-builder.Services.ConfigureApplication();
-
 //Infrastructure - ExternalApis
 builder.Services.ConfigureExternalApis();
+
+//Infrastructure - Repository / Database
+builder.Services.ConfigureRepositories(builder.Configuration);
+
+//Core - Application
+builder.Services.ConfigureApplication();
 
 var app = builder.Build();
 

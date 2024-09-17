@@ -11,6 +11,8 @@ namespace Cofidis.MicroCreditApi.Core.Application
     {
         public static void ConfigureApplication(this IServiceCollection services)
         {
+            services.AddAutoMapper(Assembly.GetExecutingAssembly());
+
             services.AddSingleton<ICreditLimitService, CreditLimitService>();
             services.AddSingleton<IEconomicIndicatorService, EconomicIndicatorService>();
 

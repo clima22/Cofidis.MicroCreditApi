@@ -1,5 +1,7 @@
-﻿using Cofidis.MicroCreditApi.Core.Application.CreditLimit;
+﻿using AutoMapper;
+using Cofidis.MicroCreditApi.Core.Application.CreditLimit;
 using Cofidis.MicroCreditApi.Core.Application.EconomicIndicator;
+using Cofidis.MicroCreditApi.Core.Domain.Repositories;
 using Cofidis.MicroCreditApi.Infra.ExternalApi.CentralCreditRegister;
 using Cofidis.MicroCreditApi.Infra.ExternalApi.DigitalMobileKey;
 using Microsoft.Extensions.Configuration;
@@ -15,16 +17,25 @@ namespace Cofidis.MicroCreditApi.Core.Application.CreditApplication
         private readonly IEconomicIndicatorService _economicIndicatorService;
         private readonly CreditApplicationSetting _creditApplicationSetting;
         private readonly CreditApplicationCreateValidator _validatorCreate;
+        private readonly ICustomerRepo _customerRepo;
+        private readonly ICreditApplicationRepo _creditApplicationRepo;
+        private readonly IMapper _mapper;
         public CreditApplicationService(IConfiguration configuration,
             ILogger<CreditApplicationService> logger,
             IEconomicIndicatorService economicIndicatorService,
-            CreditApplicationCreateValidator validatorCreate
+            CreditApplicationCreateValidator validatorCreate,
+            ICustomerRepo customerRepo,
+            ICreditApplicationRepo creditApplicationRepo,
+            IMapper mapper
         )
         {
             _logger = logger;
            
             _economicIndicatorService = economicIndicatorService;
             _validatorCreate = validatorCreate;
+            _customerRepo = customerRepo;
+            _creditApplicationRepo = creditApplicationRepo;
+            _mapper = mapper;
 
             var setting = configuration.GetSection("CreditApplication").Get<CreditApplicationSetting>();
             if (setting == null)
@@ -41,7 +52,7 @@ namespace Cofidis.MicroCreditApi.Core.Application.CreditApplication
             var valResult = _validatorCreate.Validate(request);
             if (!valResult.IsValid) return new CreditApplicationCreateResponseDto() { Result = false, ResultMessage = _validatorCreate.BuildMsgError(valResult) };
 
-            //var customerInfo = _validatorCreate.CustomerInfo;
+            var customerInfo = _validatorCreate.CustomerInfo;
             var mapCRC = _validatorCreate.MapCRC;
 
             /*Regra 1: Se o cliente tiver algum credito com valor vencido o crédito não é aceite*/
@@ -65,7 +76,23 @@ namespace Cofidis.MicroCreditApi.Core.Application.CreditApplication
 
             var requestId = Guid.NewGuid().ToString();
 
-            //Registar o cliente e o pedido de cliente no repositório de dados. Neste exercicio não foi desenvolvido o repositório DB
+            //Simular resgitar o cliente na BD
+            var customerEnt = _mapper.Map<Domain.Entities.Customer>(customerInfo);
+            if (customerEnt != null) _customerRepo.Create(customerEnt);
+
+            //Simular resgitar o pedido de credido na BD
+            var creditApplEnt = _mapper.Map<Domain.Entities.CreditApplication>(request);
+            if (creditApplEnt != null)
+            {
+                creditApplEnt.MonthlyPaymentOtherCredits = monthlyPaymentOtherCredits;
+                creditApplEnt.MonthlyPayment = monthlyPayment;
+                creditApplEnt.EffortRate = effortRate;
+                creditApplEnt.IndexRisk = indexRisk;
+                creditApplEnt.Id = requestId;
+                creditApplEnt.RequestDate = DateTime.UtcNow;
+
+                _creditApplicationRepo.Create(creditApplEnt);
+            }
 
             return new CreditApplicationCreateResponseDto() {RequestId = requestId, Result = true, ResultMessage = $"Crédito aceite.", MonthlyPayment= monthlyPayment };
         }
